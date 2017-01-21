@@ -169,9 +169,19 @@
                         text = $(this).text();
                         html = $(this).data('html');
                         if (html) { text = html; }
+                        var width = "";
+                        width = $(this).data('width');
+                        if (width === "2x") {
+                            width = "width-2x"
+                        } else if (width === "1x") {
+                            width = "width-1x"
+                        } else if (width === "4x") {
+                            width = "width-4x"
+                        }
 
                         $a = $('<a />', {
                             'href': '#',
+                            'class': width,
                             'data-rating-value': val,
                             'data-rating-text': text,
                             'html': (self.options.showValues) ? text : ''
@@ -226,7 +236,7 @@
             };
 
             // display the currently selected rating
-            var showSelectedRating = function(text) {
+            var showSelectedRating = function(text, positive) {
                 // text undefined?
                 text = text ? text : ratingText();
 
@@ -237,8 +247,12 @@
 
                 // update .br-current-rating div
                 if (self.options.showSelectedRating) {
-                    self.$elem.parent().find('.br-current-rating').text(text);
-                }
+                    if (!positive) {
+                        self.$elem.parent().find('.br-current-rating').text(text).removeClass('br-positive');    
+                    } else {
+                        self.$elem.parent().find('.br-current-rating').text(text).addClass('br-positive');
+                    }
+            }
             };
 
             // return rounded fraction of a value (14.4 -> 40, 0.99 -> 90)
@@ -265,9 +279,15 @@
                 resetStyle();
 
                 // add classes
-                $a.addClass('br-selected br-current')[nextAllorPreviousAll()]()
-                    .addClass('br-selected');
-
+                var val = +$a.data("rating-value");
+                if (val < 3) {
+                    $a.addClass('br-selected br-current')[nextAllorPreviousAll()]()
+                    .addClass('br-selected');    
+                } else {
+                    $a.addClass('br-selected br-positive br-current')[nextAllorPreviousAll()]()
+                    .addClass('br-selected br-positive');
+                }
+                
                 if (!getData('ratingMade') && $.isNumeric(initialRating)) {
                     if ((initialRating <= baseValue) || !f) {
                         return;
@@ -318,8 +338,12 @@
                     setData('ratingMade', true);
 
                     setSelectFieldValue(value);
-                    showSelectedRating(text);
-
+                    if (value < 3) {
+                        showSelectedRating(text, false);    
+                    } else {
+                        showSelectedRating(text, true);
+                    }
+                    
                     applyStyle();
 
                     // onSelect callback
@@ -341,17 +365,28 @@
 
                     resetStyle();
 
-                    $a.addClass('br-active')[nextAllorPreviousAll()]()
+                    var val = +$a.data("rating-value");
+                    if (val < 3) {
+                        $a.addClass('br-active')[nextAllorPreviousAll()]()
                         .addClass('br-active');
-
-                    showSelectedRating($a.attr('data-rating-text'));
+                        showSelectedRating($a.attr('data-rating-text'), false);
+                    } else {
+                        $a.addClass('br-active br-positive')[nextAllorPreviousAll()]()
+                        .addClass('br-active br-positive');
+                        showSelectedRating($a.attr('data-rating-text'), true);
+                    }
+                    
                 });
             };
 
             // handle mouseleave events
             var attachMouseLeaveHandler = function($elements) {
                 self.$widget.on('mouseleave.barrating blur.barrating', function() {
-                    showSelectedRating();
+                    if (ratingValue() < 3) {
+                        showSelectedRating("", false);    
+                    } else {
+                        showSelectedRating("", true);
+                    }
                     applyStyle();
                 });
             };
@@ -451,7 +486,11 @@
                 setData('ratingMade', true);
 
                 setSelectFieldValue(ratingValue());
-                showSelectedRating(ratingText());
+                if (value < 3) {
+                    showSelectedRating(ratingText(), false);
+                } else {
+                    showSelectedRating(ratingText(), true);
+                }
 
                 applyStyle();
 
@@ -474,8 +513,12 @@
                 setData('ratingMade', false);
 
                 resetSelectField();
-                showSelectedRating(ratingText());
-
+                if (getData('originalRatingValue') < 3) {
+                    showSelectedRating(ratingText(), false);
+                } else {
+                    showSelectedRating(ratingText(), true);
+                }
+                
                 applyStyle();
 
                 // onClear callback
